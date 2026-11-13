@@ -73,11 +73,22 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stamina")
 	float StaminaRegenRate = 15.0f;
 
-	bool bIsSprinting = false;
-	bool bIsExhausted = false;
+	// Camera Sway Ayarlari
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera Sway")
+	float MouseSwayMultiplier = 0.4f;
 
-	void StartSprinting();
-	void StopSprinting();
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera Sway")
+	float SwayInterpSpeed = 8.0f;
+
+	// Camera Shake Ayarlari
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera Shake")
+	TSubclassOf<class UCameraShakeBase> IdleCameraShake;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera Shake")
+	TSubclassOf<class UCameraShakeBase> WalkCameraShake;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera Shake")
+	TSubclassOf<class UCameraShakeBase> SprintCameraShake;
 
 protected:
 
@@ -107,6 +118,12 @@ protected:
 
 	/** Set up input action bindings */
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
+
+	bool bIsSprinting = false;
+	bool bIsExhausted = false;
+
+	void StartSprinting();
+	void StopSprinting();
 	
 
 public:
@@ -120,5 +137,12 @@ public:
 	/** Returns first person camera component **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
+private:
+
+	float CurrentSwayRoll = 0.0f;
+	float LastYawInput = 0.0f;
+
+
+	TSubclassOf<class UCameraShakeBase> CurrentCameraShake;
 };
 

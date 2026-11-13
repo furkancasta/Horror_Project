@@ -8,7 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "Horror_Project.h"
 
 AHorror_ProjectCharacter::AHorror_ProjectCharacter()
@@ -106,6 +106,7 @@ void AHorror_ProjectCharacter::DoAim(float Yaw, float Pitch)
 		// pass the rotation inputs
 		AddControllerYawInput(Yaw);
 		AddControllerPitchInput(Pitch);
+		LastYawInput = Yaw;
 	}
 }
 
@@ -156,6 +157,49 @@ void AHorror_ProjectCharacter::Tick(float DeltaTime)
 		if (bIsExhausted && CurrentStamina >= (MaxStamina * 0.3f))
 		{
 			bIsExhausted = false;
+		}
+	}
+	// Camera sway hesaplama
+	float TargetRoll = LastYawInput * MouseSwayMultiplier;
+	TargetRoll = FMath::Clamp(TargetRoll, -3.0f, 3.0f);
+	CurrentSwayRoll = FMath::FInterpTo(CurrentSwayRoll, TargetRoll, DeltaTime, SwayInterpSpeed);
+
+	if (FirstPersonCameraComponent)
+	{
+		FRotator CurrentRot = FirstPersonCameraComponent->GetRelativeRotation();
+		FirstPersonCameraComponent->SetRelativeRotation(FRotator(CurrentRot.Pitch, CurrentRot.Yaw, CurrentSwayRoll));
+	}
+
+	LastYawInput = 0.0f;
+
+	// Camera shake uygulama
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		TSubclassOf<UCameraShakeBase> TargetShake = nullptr;
+
+		if (GetCharacterMovement()->IsMovingOnGround())
+		{
+			if (GetVelocity().SizeSquared() > 2500.0f)
+			{
+				TargetShake = bIsSprinting ? SprintCameraShake : WalkCameraShake;
+			}
+			else
+			{
+				TargetShake = IdleCameraShake;
+			}
+		}
+
+		if (TargetShake != CurrentCameraShake)
+		{
+			if (CurrentCameraShake)
+			{
+				PC->ClientStopCameraShake(CurrentCameraShake, false);
+			}
+			if (TargetShake)
+			{
+				PC->ClientStartCameraShake(TargetShake);
+			}
+			CurrentCameraShake = TargetShake;
 		}
 	}
 }
