@@ -48,6 +48,15 @@ AHorror_ProjectCharacter::AHorror_ProjectCharacter()
 	CurrentStamina = MaxStamina;
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 
+	// FlashlightArm ayarlari
+	FlashlightSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("FlashlightSpringArm"));
+	FlashlightSpringArm->SetupAttachment(FirstPersonCameraComponent);
+	FlashlightSpringArm->SetRelativeLocation(FVector(22.0f, 14.0f, -16.0f));
+	FlashlightSpringArm->TargetArmLength = 0.0f;
+	FlashlightSpringArm->bDoCollisionTest = false;
+	FlashlightSpringArm->bEnableCameraRotationLag = true;
+	FlashlightSpringArm->CameraRotationLagSpeed = 8.5f;
+
 }
 
 void AHorror_ProjectCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -71,6 +80,27 @@ void AHorror_ProjectCharacter::SetupPlayerInputComponent(UInputComponent* Player
 			EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AHorror_ProjectCharacter::StartSprinting);
 			EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AHorror_ProjectCharacter::StopSprinting);
 		}
+
+	// Sprinting
+	if (SprintAction)
+	{
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AHorror_ProjectCharacter::StartSprinting);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AHorror_ProjectCharacter::StopSprinting);
+	}
+
+	// Flashlight & Interaction
+	if (InteractAction)
+	{
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AHorror_ProjectCharacter::Interact);
+	}
+	if (DropAction)
+	{
+		EnhancedInputComponent->BindAction(DropAction, ETriggerEvent::Started, this, &AHorror_ProjectCharacter::DropItem);
+	}
+	if (FlashlightAction)
+	{
+		EnhancedInputComponent->BindAction(FlashlightAction, ETriggerEvent::Started, this, &AHorror_ProjectCharacter::ToggleFlashlight);
+	}
 	}
 	else
 	{
@@ -217,4 +247,42 @@ void AHorror_ProjectCharacter::StopSprinting()
 {
 	bIsSprinting = false;
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+}
+
+void AHorror_ProjectCharacter::Interact()
+{
+	if (EquippedFlashlight != nullptr) return;
+
+	FVector Start = FirstPersonCameraComponent->GetComponentLocation();
+	FVector End = Start + (FirstPersonCameraComponent->GetForwardVector() * 175.0f);
+
+	FHitResult HitResult;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params))
+	{
+		if (AFlashlight* HitFlashlight = Cast<AFlashlight>(HitResult.GetActor()))
+		{
+			EquippedFlashlight = HitFlashlight;
+			EquippedFlashlight->PickUp(FlashlightSpringArm);
+		}
+	}
+}
+
+void AHorror_ProjectCharacter::DropItem()
+{
+	if (EquippedFlashlight)
+	{
+		EquippedFlashlight->Drop(FirstPersonCameraComponent->GetForwardVector());
+		EquippedFlashlight = nullptr;
+	}
+}
+
+void AHorror_ProjectCharacter::ToggleFlashlight()
+{
+	if (EquippedFlashlight)
+	{
+		EquippedFlashlight->ToggleFlashlight();
+	}
 }

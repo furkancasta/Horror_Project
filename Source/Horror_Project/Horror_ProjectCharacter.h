@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Flashlight.h"
 #include "Horror_ProjectCharacter.generated.h"
 
 class UInputComponent;
@@ -90,6 +92,25 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera Shake")
 	TSubclassOf<class UCameraShakeBase> SprintCameraShake;
 
+	// Flashlight Ayarlari
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Flashlight")
+	USpringArmComponent* FlashlightSpringArm;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	UInputAction* InteractAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	UInputAction* DropAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* FlashlightAction;
+
+protected:
+
+	void Interact();
+	void DropItem();
+	void ToggleFlashlight();
+
 protected:
 
 	/** Called from Input Actions for movement input */
@@ -138,6 +159,9 @@ public:
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
 private:
+
+	UPROPERTY()
+	AFlashlight* EquippedFlashlight = nullptr;
 
 	float CurrentSwayRoll = 0.0f;
 	float LastYawInput = 0.0f;
