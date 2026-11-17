@@ -8,6 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Door.h"
 #include "GameFramework/PlayerController.h"
 #include "Horror_Project.h"
 
@@ -251,8 +252,6 @@ void AHorror_ProjectCharacter::StopSprinting()
 
 void AHorror_ProjectCharacter::Interact()
 {
-	if (EquippedFlashlight != nullptr) return;
-
 	FVector Start = FirstPersonCameraComponent->GetComponentLocation();
 	FVector End = Start + (FirstPersonCameraComponent->GetForwardVector() * 175.0f);
 
@@ -262,10 +261,20 @@ void AHorror_ProjectCharacter::Interact()
 
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params))
 	{
+		// Fener kontrolu
 		if (AFlashlight* HitFlashlight = Cast<AFlashlight>(HitResult.GetActor()))
 		{
-			EquippedFlashlight = HitFlashlight;
-			EquippedFlashlight->PickUp(FlashlightSpringArm);
+			// el bossa feneri al
+			if (EquippedFlashlight == nullptr)
+			{
+				EquippedFlashlight = HitFlashlight;
+				EquippedFlashlight->PickUp(FlashlightSpringArm);
+			}
+		}
+		// Kapi kontrolu
+		else if (ADoor* HitDoor = Cast<ADoor>(HitResult.GetActor()))
+		{
+			HitDoor->ToggleDoor(GetActorLocation());
 		}
 	}
 }
